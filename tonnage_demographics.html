@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<title>Carto Map test</title>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+	<link rel="shortcut icon" href="http://cartodb.com/assets/favicon.ico" />
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<style>
+	  html, body, #map {
+		height: 100%;
+		padding: 0;
+		margin: 0;
+	  }
+
+	  #month_selector{
+		position: absolute;
+		top: 100px;
+		right: 20px;
+		padding: 0;
+	  }
+	  #layer_selector {
+		position: absolute;
+		top: 165px;
+		left: 20px;
+		padding: 0;
+	  }
+
+	  #month_selector ul {
+		padding: 0; margin: 0;
+		list-style-type: none;
+	  }
+
+	  #census_layers {
+		position: absolute;
+		top: 300px;
+		left: 20px;
+		padding: 0;
+
+	  }
+
+	  #census_layers ul {
+		padding: 0; margin: 0;
+		list-style-type: none;
+	  }
+
+	  #census_layers li {
+		border-bottom: 1px solid #999;
+		padding: 15px 30px;
+		font-family: "Helvetica", Arial;
+		font-size: 13px;
+		color: #444;
+		cursor: auto;
+	  }
+	  
+	  #census_layers li:hover {
+		background-color: #F0F0F0;
+		cursor: pointer;
+	  }
+
+	  #census_layers li.selected {
+		background-color: #EEE;
+	  }
+
+
+
+	  #month_selector li {
+		border-bottom: 1px solid #999;
+		padding: 15px 30px;
+		font-family: "Helvetica", Arial;
+		font-size: 13px;
+		color: #444;
+		cursor: auto;
+	  }
+
+	  #month_selector li:hover {
+		background-color: #F0F0F0;
+		cursor: pointer;
+	  }
+
+	  #month_selector, #layer_selector li.selected {
+		background-color: #EEE;
+	  }
+
+	  #layer_selector ul {
+		padding: 0; margin: 0;
+		list-style-type: none;
+	  }
+
+	  #layer_selector li {
+		border-bottom: 1px solid #999;
+		padding: 15px 30px;
+		font-family: "Helvetica", Arial;
+		font-size: 13px;
+		color: #444;
+		cursor: auto;
+	  }
+	  
+	  #layer_selector li:hover {
+		background-color: #F0F0F0;
+		cursor: pointer;
+	  }
+
+	  #layer_selector li.selected {
+		background-color: #EEE;
+	  }
+
+	</style>
+
+	<link rel="stylesheet" href="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/themes/css/cartodb.css" />
+	<body>
+	<div id="map"></div>
+    <div id="month_selector" class="cartodb-infobox">
+      <ul>
+		<li data='2014 / 01' class="selected">January 2014</li>
+        <li data='2014 / 02'>February 2014</li>
+        <li data='2014 / 03'>March</li>
+        <li data='2014 / 04'>April 2014</li>
+        <li data='2014 / 05'>May 2014</li>
+        <li data='2014 / 06'>June 2014</li>
+        <li data='2014 / 07'>July 2014</li>
+        <li data='2014 / 08'>August 2014</li>
+        <li data='2014 / 09'>September 2014</li>
+      </ul>
+    </div>
+
+    <div id="census_layers" class="cartodb-infobox">
+    	<ul>
+			<li id="population">Population</li>
+			<li id="housing_val">Median Housing Value</li>
+			<li id="income">Median Income</li>
+    	</ul>
+    </div>
+
+    <div id="layer_selector" class="cartodb-infobox">
+		<ul>
+			<li id="cd_boundaries">Community District Boundaries</li>
+			<li id="tonnages">Monthly Tonnage per Capita</li>
+			<li id="census_selector">Census Layers</li>
+    	<ul>
+    </div>
+	<!-- include cartodb.js library -->
+
+<script src="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/cartodb.js"></script>
+
+	<script>
+	var income, tonnage, cd_boundaries, population;
+	
+	//create layer selector
+	function monthSelector(layer) {
+		var sql = new cartodb.SQL({ user: 'ah3200' });
+
+		var $months = $('#month_selector li');
+		$months.click (function(e){
+			var $li = $(e.target);
+			var $month = $li.attr('data');
+
+		// deselect all and select the clicked one
+		$months.removeClass('selected');
+		$li.addClass('selected');
+
+		// create query based on data from the layer
+		var query = "SELECT * FROM tonnagesbypopulation_merge WHERE month IN ('2014 / 01') AND month IS NOT NULL";
+		if($month !== '2014 / 01') {
+		query = "SELECT * FROM tonnagesbypopulation_merge WHERE month IN (" + "'"+ $month + "'" + ") AND month IS NOT NULL";
+		}
+		// change the query in the layer to update the map
+		layer.setSQL(query);
+		console.log("monthSelector fired!")
+		});
+	};
+
+		//this has GOT to be refactored
+		function layerSelector(layer) {
+			var censusClicked = false;
+			$('#census_selector').click(function() {
+				if(!censusClicked) {
+					$('#census_selector').removeClass('selected');
+					$(this).addClass('selected');
+					census.hide()
+					$('#census_layers').hide('slow');
+					censusClicked = true;
+				}
+				else {
+					$('#census_selector').removeClass('selected');
+					$(this).addClass('selected');
+					census.show()
+					$('#census_layers').show('slow');
+					censusClicked = false;				
+				}
+			});
+
+			var tonnageClicked = false;
+			$('#tonnages').click(function() {
+				if(!tonnageClicked) {
+					$('#tonnages').removeClass('selected');
+					$(this).addClass('selected');
+					tonnage.hide()
+					$('#month_selector').hide('slow');
+					tonnageClicked = true;
+				}
+				else {
+					$('#tonnages').removeClass('selected');
+					$(this).addClass('selected');
+					tonnage.show()
+					$('#month_selector').show('slow');
+					tonnageClicked = false;				
+				}
+			});
+
+			var cdClicked = false;
+			$('#cd_boundaries').click(function() {
+				if(!cdClicked) {
+					$('#cd_boundaries').removeClass('selected');
+					$(this).addClass('selected');
+					cd_boundaries.hide()
+					cdClicked = true;
+				}
+				else {
+					$('#cd_boundaries').removeClass('selected');
+					$(this).addClass('selected');
+					cd_boundaries.show()
+					cdClicked = false;				
+				}
+			});
+
+			$('#income').click(function() {
+					$('#income').removeClass('selected');
+					$(this).addClass('selected');
+					census.hide()
+					$('#income').removeClass('selected');
+					$(this).addClass('selected');
+					var incomeCSS = '#map_census_acs2012_ct{polygon-fill: #0C2C84;polygon-opacity: 0.6;line-color: #FFF;line-width: 0.5;line-opacity: 1;}#map_census_acs2012_ct [ income_median <= 250001] {polygon-fill: #FFFFCC;}#map_census_acs2012_ct [ income_median <= 84727] {polygon-fill: #C7E9B4;}#map_census_acs2012_ct [ income_median <= 67500] {polygon-fill: #7FCDBB;}#map_census_acs2012_ct [ income_median <= 57200] {polygon-fill: #41B6C4;}#map_census_acs2012_ct [ income_median <= 48159] {polygon-fill: #1D91C0;}#map_census_acs2012_ct [ income_median <= 39508] {polygon-fill: #225EA8;}#map_census_acs2012_ct [ income_median <= 30106] {polygon-fill: #0C2C84;}';
+					layer.setCartoCSS(incomeCSS);
+					census.show()				
+			});
+
+			$('#population').click(function() {
+					$('#population').removeClass('selected');
+					$(this).addClass('selected');
+					var populationCSS = '#map_census_acs2012_ct{polygon-fill: #0C2C84;polygon-opacity: 0.6;line-color: #FFF;line-width: 0.5;line-opacity: 1;}#map_census_acs2012_ct [ population <= 26908] {polygon-fill: #FFFFCC;}#map_census_acs2012_ct [ population <= 6161] {polygon-fill: #C7E9B4;}#map_census_acs2012_ct [ population <= 4765] {polygon-fill: #7FCDBB;}#map_census_acs2012_ct [ population <= 3932] {polygon-fill: #41B6C4;}#map_census_acs2012_ct [ population <= 3246] {polygon-fill: #1D91C0;}#map_census_acs2012_ct [ population <= 2562] {polygon-fill: #225EA8;}#map_census_acs2012_ct [ population <= 1870] {polygon-fill: #0C2C84;}'; 
+					layer.setCartoCSS(populationCSS);
+					census.show();		
+			});
+			$('#housing_val').click(function() {
+					$('#housing_val').removeClass('selected');
+					$(this).addClass('selected');
+					var housingCSS = '#map_census_acs2012_ct{polygon-fill: #0C2C84;polygon-opacity: 0.6;line-color: #FFF;line-width: 0.5;line-opacity: 1;}#map_census_acs2012_ct [ house_value_median <= 5963] {polygon-fill: #FFFFCC;}#map_census_acs2012_ct [ house_value_median <= 1159] {polygon-fill: #C7E9B4;}#map_census_acs2012_ct [ house_value_median <= 800] {polygon-fill: #7FCDBB;}#map_census_acs2012_ct [ house_value_median <= 588] {polygon-fill: #41B6C4;}#map_census_acs2012_ct [ house_value_median <= 436] {polygon-fill: #1D91C0;}#map_census_acs2012_ct [ house_value_median <= 296] {polygon-fill: #225EA8;}#map_census_acs2012_ct [ house_value_median <= 151] {polygon-fill: #0C2C84;}'; 
+					layer.setCartoCSS(housingCSS);
+					census.show();		
+			});
+	};
+
+		function main() {
+		  cartodb.createVis('map', 'https://ah3200.cartodb.com/api/v2/viz/61907a88-65f1-11e4-973c-0e4fddd5de28/viz.json', {
+		  	https: true,
+			shareable: false,
+			title: true,
+			description: true,
+			search: false,
+			tiles_loader: true,
+			layer_selector: false,
+			center_lat: 40.714623,
+			center_lon: -73.91,
+			zoom: 11,
+			no_cdn: true
+		  })
+		.done(function(vis, layers) {
+		  // layer 0 is the base layer, layer 1 is cartodb layer
+		  census = layers[1].getSubLayer(0);
+		  tonnage = layers[1].getSubLayer(1);
+		  cd_boundaries = layers[1].getSubLayer(2);
+		  console.log( vis.legends.getLegendByIndex(1).hide() );
+		  monthSelector(tonnage);
+		  layerSelector(census, cd_boundaries, tonnage);
+
+		})
+		.error(function(err) {
+		  console.log(err);
+		});
+	}	
+
+	$(window).load(main);
+	  </script>
+  </body>
+</html>

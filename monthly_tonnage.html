@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	<title>Carto Map test</title>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+	<link rel="shortcut icon" href="http://cartodb.com/assets/favicon.ico" />
+	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<style>
+	  html, body, #map {
+		height: 100%;
+		padding: 0;
+		margin: 0;
+	  }
+
+	  #layer_selector {
+		position: absolute;
+		top: 50px;
+		right: 20px;
+		padding: 0;
+	  }
+
+	  #layer_selector ul {
+		padding: 0; margin: 0;
+		list-style-type: none;
+	  }
+
+	  #layer_selector li {
+		border-bottom: 1px solid #999;
+		padding: 15px 30px;
+		font-family: "Helvetica", Arial;
+		font-size: 13px;
+		color: #444;
+		cursor: auto;
+	  }
+
+	  #layer_selector li:hover {
+		background-color: #F0F0F0;
+		cursor: pointer;
+	  }
+
+	  #layer_selector li.selected {
+		background-color: #EEE;
+	  }
+	</style>
+
+	<link rel="stylesheet" href="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/themes/css/cartodb.css" />
+	<body>
+	<div id="map"></div>
+    <div id="layer_selector" class="cartodb-infobox">
+      <ul>
+        <li data='2014 / 01' class="selected">January 2014</li>
+        <li data='2014 / 02'>February 2014</li>
+        <li data='2014 / 03'>March</li>
+        <li data='2014 / 04'>April 2014</li>
+        <li data='2014 / 05'>May 2014</li>
+        <li data='2014 / 06'>June 2014</li>
+        <li data='2014 / 07'>July 2014</li>
+        <li data='2014 / 08'>August 2014</li>
+        <li data='2014 / 09'>September 2014</li>
+      </ul>
+    </div>
+	<!-- include cartodb.js library -->
+
+<script src="https://cartodb-libs.global.ssl.fastly.net/cartodb.js/v3/cartodb.js"></script>
+
+	<script>
+	// create layer selector
+	function createSelector(layer) {
+		var sql = new cartodb.SQL({ user: 'ah3200' });
+
+		var $months = $('#layer_selector li');
+		$months.click (function(e){
+			var $li = $(e.target);
+			var $month = $li.attr('data');
+
+		// deselect all and select the clicked one
+		$months.removeClass('selected');
+		$li.addClass('selected');
+
+		// create query based on data from the layer
+		var query = "SELECT * FROM tonnagesbypopulation_merge WHERE month IN ('2014 / 01') AND month IS NOT NULL";
+		console.log(query)
+		if($month !== '2014 / 01') {
+		query = "SELECT * FROM tonnagesbypopulation_merge WHERE month IN (" + "'"+ $month + "'" + ") AND month IS NOT NULL";
+		}
+		console.log(query)
+		// change the query in the layer to update the map
+		layer.setSQL(query);
+		console.log("createSelector fired!")
+		});
+	}
+		function main() {
+		  cartodb.createVis('map', 'https://ah3200.cartodb.com/api/v2/viz/f6083192-5e08-11e4-be74-0e9d821ea90d/viz.json', {
+		  	https: true,
+			shareable: false,
+			title: true,
+			description: true,
+			search: false,
+			tiles_loader: true,
+			layer_selector: false,
+			center_lat: 40.714623,
+			center_lon: -74.006605,
+			zoom: 11,
+			no_cdn: true
+		  })
+		.done(function(vis, layers) {
+		  // layer 0 is the base layer, layer 1 is cartodb layer
+		  var subLayer = layers[1].getSubLayer(0);
+		  createSelector(subLayer);
+		})
+		.error(function(err) {
+		  console.log(err);
+		});
+	}	
+
+	$(window).load(main);
+
+	  </script>
+  </body>
+</html>
